@@ -1,4 +1,6 @@
 ## RENAME this file YourLastName_OOP_FinalProject_2026.py
+# my repo: https://github.com/Tenth-HD/Biol668_OOP_Project_Sequence_Class
+# tony repo: https://github.com/TonyZamro/python_oop_project.git
 
 ##Assignment: Add to the constructor and methods of a parent class and child classes
 ##            which inherit the base class properties. NOTE: You are not allowed
@@ -132,6 +134,7 @@ class DNA(Seq):
 #      re.sub('[^ATGCU]','N',sequence) will change any character that is not a
 #      capital A, T, G, C or U into an N. (Seq already uppercases and strips.)
 
+#  
 #  Methods:
 #  (1) Add a method called print_info that is like print_record, but adds geneid and an
 #      empty space to the beginning of the string.
@@ -193,16 +196,105 @@ class RNA(DNA):
         self.sequence=re.sub("T","U",re.sub('[^ATGCU]','N',sequence.strip().upper()))
         self.codons = codons
     def make_codons(self):
-        self.seq
-    #def translate(self):
+        self.codons = re.findall("\w{3}", self.sequence)
+    def translate(self):
+        prot = ""
+        for aa in self.codons:
+            try:
+                prot+=standard_code[aa]
+            except:
+                prot+="X"
+        return prot
 
-#class Protein(Seq):
+class Protein(Seq):
+    ### Protein Class: INHERITS Seq class
+#
+#  Construtor:
+#  Use the super() function (see DNA Class example).
+#  Use re.sub to change any non LETTER characters in self.sequence into an 'X'.
 
-    #def __init__:
+#  Methods:
+#  The next 2 methods use a kyte_doolittle and the aa_mol_weights dictionaries.
+#  (2) Add total_hydro, which return the sum of the total hydrophobicity of a self.sequence
+#  (3) Add mol_weight, which returns the total molecular weight of the protein
+#      sequence assigned to the protein object. 
 
-    #def total_hydro(self):
+# Tony Suggestion
+# 2 sequences of protein, find ratio of X in respect to each other
 
-    #def mol_weight(self):
+    def __init__(self,sequence,gene,species,kmers=[],**kwargs):
+        super().__init__(sequence, gene, species)
+        self.sequence = re.sub("\W","X",self.sequence)
+    def total_hydro(self):
+        charge = 0
+        for aa in self.sequence:
+            charge += kyte_doolittle[aa]
+        return charge
+    def mol_weight(self):
+        mass = 0
+        for aa in self.sequence:
+            mass += aa_mol_weights[aa]
+        return mass
+    
+    def __eq__(self, other):
+        # Operation overload for equals, where two Protein sequence molecular weights are compared to see if equal
+        # Returns string indicating as such
+        try:
+            if self.mol_weight() == other.mol_weight():
+                return f"{self.gene} has the same molecular weight as {other.gene}"
+            else:
+                return f"{self.gene} has a different molecular weight as {other.gene}"
+
+            
+        except:
+            return "Error, ensure that both entries are protein sequences"
+
+    def funct_groups(self):
+        # Converts the amino acid into it's general functional group using 
+        # via dictionary, and returns the functional group sequence
+        functional_aminoacid_groups = {
+            "G": "N",
+            "A": "N",
+            "V": "N",
+            "L": "N",
+            "I": "N",
+            "M": "N",
+            "P": "N",
+            "F": "N",
+            "W": "N",
+
+            "Y": "P",
+            "S": "P",
+            "T": "P",
+            "C": "P",
+            "N": "P",
+            "Q": "P",
+
+            "K": "+",
+            "R": "+",
+            "H": "+",
+
+            "D": "-",
+            "E": "-",
+
+            "X": "X",
+            "*": "*"
+        }
+
+        fun_seq = "" # empty variable to store functional groups sequence
+        for aa in self.sequence:
+            fun_seq += functional_aminoacid_groups[aa]
+
+        # variables to store counts of each functional group
+        non = len(re.findall("N", fun_seq))
+        pol = len(re.findall("P", fun_seq))
+        pos = len(re.findall("\+", fun_seq))
+        neg = len(re.findall("\-", fun_seq))
+        unk = len(re.findall("X", fun_seq))
+        
+        # returns string with functional sequence and counts of each
+        fun_seq += f'\n(N)on-polar: {non}\n(P)olar Noncharged: {pol}\nPolar (+): {pos}\nPolar (-): {neg}\nUnknown (X): {unk}'
+        return fun_seq
 
 
     
