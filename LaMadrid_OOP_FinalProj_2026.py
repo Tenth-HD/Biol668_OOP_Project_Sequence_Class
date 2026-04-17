@@ -89,6 +89,34 @@ aa_mol_weights={'A':89.09,'C':121.15,'D':133.1,'E':147.13,'F':165.19,
                 'G':75.07,'H':155.16,'I':131.17,'K':146.19,'L':131.17,
                 'M':149.21,'N':132.12,'P':115.13,'Q':146.15,'R':174.2,
                 'S':105.09,'T':119.12,'V':117.15,'W':204.23,'X':0,'Y':181.19}
+functional_aminoacid_groups = {
+            "G": "N",
+            "A": "N",
+            "V": "N",
+            "L": "N",
+            "I": "N",
+            "M": "N",
+            "P": "N",
+            "F": "N",
+            "W": "N",
+
+            "Y": "P",
+            "S": "P",
+            "T": "P",
+            "C": "P",
+            "N": "P",
+            "Q": "P",
+
+            "K": "+",
+            "R": "+",
+            "H": "+",
+
+            "D": "-",
+            "E": "-",
+
+            "X": "X",
+            "*": "*"
+        }
 
 
 class Seq:
@@ -249,37 +277,10 @@ class Protein(Seq):
         except:
             return "Error, ensure that both entries are protein sequences"
 
-    def funct_groups(self):
+    def functional_groups(self):
         # Converts the amino acid into it's general functional group using 
         # via dictionary, and returns the functional group sequence
-        functional_aminoacid_groups = {
-            "G": "N",
-            "A": "N",
-            "V": "N",
-            "L": "N",
-            "I": "N",
-            "M": "N",
-            "P": "N",
-            "F": "N",
-            "W": "N",
-
-            "Y": "P",
-            "S": "P",
-            "T": "P",
-            "C": "P",
-            "N": "P",
-            "Q": "P",
-
-            "K": "+",
-            "R": "+",
-            "H": "+",
-
-            "D": "-",
-            "E": "-",
-
-            "X": "X",
-            "*": "*"
-        }
+        
 
         fun_seq = "" # empty variable to store functional groups sequence
         for aa in self.sequence:
