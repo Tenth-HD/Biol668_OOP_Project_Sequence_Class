@@ -153,6 +153,29 @@ class Seq:
         return
     def fasta(self):
         return f">{self.species} {self.gene}\n{self.sequence}"
+
+     
+    def fasta_parser(self,file):
+        """
+        This function parses a fasta file and returns the sequence, species, and associated gene
+        
+        >>> p = Protein("  WCVALKKKCCYhhhhh-yyyrsQ\t ", "my_prot", "D.melanogaster","56008009")
+        >>> print(p)
+        WCVALKKKCCYHHHHHXYYYRSQ
+        >>> print(p.fasta_parser('seq.txt'))
+        ['H.sapiens', 'my_gene']
+        {'GATATAGGACCTTTAGGACCAC': ['H.sapiens', 'my_gene']}
+        """
+        with open(file,'r') as fastar:
+            for i in fastar.readlines():
+                if i.startswith('>'):
+                    species_gene_split = i[1:].split(';')
+                    cleaned_labels = [i.strip() for i in species_gene_split]
+                    print(cleaned_labels)
+                else:
+                    self.fasta_hash[i] = cleaned_labels
+                    self.sequence_list.append(i)
+        return self.fasta_hash
     
 class DNA(Seq):
     ### DNA Class: INHERITS Seq class
@@ -186,11 +209,31 @@ class DNA(Seq):
         print(self.geneid+" "+self.species + " " + self.gene + ": " + self.sequence)
 
     def reverse_complement(self):
-        conv = {"A":"T", "T":"A", "C":"G", "G":"C", "U":"A", "N":"N"}
-        reverse = ""
-        for nuc in reversed(self.sequence):
-            reverse+=conv[nuc]
-        return reverse
+        """
+        returns the reverse complement of a given DNA sequence
+
+        >>> d=DNA("   -tcaaaGCGGATCTTCCCaaatga\\n","my_dna","D.terebrans","AX5667")
+        >>> print(d)
+        NTCAAAGCGGATCTTCCCAAATGA
+        >>> rc = d.reverse_complement()
+        >>> print(rc)
+        TCATTTGGGAAGATCCGCTTTGAN
+        """
+        self._reverse_strand = ""
+        for i in self.sequence[::-1]:
+            if i == "T":
+                self._reverse_strand += "A"
+            elif i == "A":
+                self._reverse_strand += "T"
+            elif i == "G":
+                self._reverse_strand += "C"
+            elif i == "C":
+                self._reverse_strand += "G"
+            else:
+                self._reverse_strand += "N"
+        return self._reverse_strand
+
+     
     def six_frames(self):
         frames = []
         frames.append(self.sequence)
@@ -234,6 +277,53 @@ class RNA(DNA):
                 prot+="X"
         return prot
 
+         
+     def ORF(self):
+        '''
+        provides all ORF starting with a start codon and ending with a stop codon
+        >>> testRna=RNA("GGAAGUGAAUGCGUAGGA","TsGen","elliot","sillyGene")
+        >>> print(testRna)
+        GGAAGUGAAUGCGUAGGA
+        >>> orf=testRna.ORF()
+        >>> print(orf)
+        AUGCGUAAGUGA
+
+   
+
+        '''
+        self.met_frames=[]
+        stop_codon= ["UAA", "UAG", "UGA"]
+        for n in range(0,len(self.sequence)-2):
+           if self.sequence[n:n+3] == "AUG":
+               for q in range(n+3, len(self.sequence)-2,3):
+                   codon=self.sequence[q:q+3]
+                   if codon in stop_codon:
+                       metcode=self.sequence[n:q+3]
+                       self.met_frames.append(metcode)
+                       break
+        reverse_sequence=self.sequence[::-1]
+        for i in range(0,len(reverse_sequence)-2):
+            if reverse_sequence[i:i+3] == "AUG":
+                for m in range(i + 3,len(reverse_sequence)-2,3):
+                    codon = reverse_sequence[m:m+3]
+                    if codon in stop_codon:
+                        metcode = reverse_sequence[i:m+3]
+                        self.met_frames.append(metcode)
+                        break
+        return(metcode)
+
+
+     def __add__(self,other):
+        '''
+        >>> testRna=RNA("GGAAGUGAAUGCGUAGGA","TsGen","elliot","sillyGene")
+        >>> testRna2=RNA("GGAAGUGUUAUGCGUAGGA","TsGen2","elliot","sillyGene2")
+        >>> at=testRna+testRna2
+        >>> print(at)
+        GGAAGUGAAUGCGUAGGAGGAAGUGUUAUGCGUAGGA
+        '''
+        seqjoin=self.sequence+other.sequence
+        return seqjoin
+
 class Protein(Seq):
      ### Protein Class: INHERITS Seq class
 #
@@ -266,12 +356,48 @@ class Protein(Seq):
         for aa in self.sequence:
             charge += kyte_doolittle[aa]
         return charge
+
+     
     def mol_weight(self):
-        mass = 0
-        for aa in self.sequence:
-            mass += aa_mol_weights[aa]
-        return mass
+        """
+        The mol_weight function returns the molecular weight of a given protein sequence
+        >>> p = Protein("  WCVALKKKCCYhhhhh-yyyrsQ\t ", "my_prot", "D.melanogaster","56008009")
+        >>> print(p)
+        WCVALKKKCCYHHHHHXYYYRSQ
+        >>> x_p = p.mol_weight()
+        >>> print(x_p)
+        3269.6600000000008
+        
+        """
+        self._total_mol_weight_score = 0
+        for i in self.sequence:
+            _mol_weight_residue_score = aa_mol_weights[i]
+            self._total_mol_weight_score +=  _mol_weight_residue_score
+        return self._total_mol_weight_score
     
+    def __gt__(self, other):
+        """
+        This function overloads the greater than operator to compare the molecular weights of two protein sequences,
+        meaning the mol_weight function will have to be called first before doing the comparison
+        
+        >>> p = Protein("  WCVALKKKCCYhhhhh-yyyrsQ\t ", "my_prot", "D.melanogaster","56008009")
+        >>> print(p)
+        WCVALKKKCCYHHHHHXYYYRSQ
+        >>> testp = Protein('VIKING','test','unknown','999')
+        >>> print(testp)
+        VIKING
+        >>> print(testp > p)
+        my_prot is larger than test
+        """
+        try:
+            if self._total_mol_weight_score > other._total_mol_weight_score:
+                return f"{self.gene} is larger than {other.gene}"
+            else:
+                return f"{other.gene} is larger than {self.gene}"
+        except AttributeError as e:
+            return "An attribute error has occured please make sure that you called the molecular weight function first before comparing sequence weights"
+
+     
     def __eq__(self, other):
         """Operation overload for equals, where two Protein sequence molecular weights are compared to see if equal
         Returns string indicating as such
